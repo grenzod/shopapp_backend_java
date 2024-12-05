@@ -1,6 +1,7 @@
 package com.project.shopapp.services.impl;
 
 import com.project.shopapp.DTO.UserDTO;
+import com.project.shopapp.DTO.UserLoginDTO;
 import com.project.shopapp.components.JWTTokenUtil;
 import com.project.shopapp.exceptions.DataNotFoundException;
 import com.project.shopapp.exceptions.PermissionDenyException;
@@ -9,38 +10,39 @@ import com.project.shopapp.models.User;
 import com.project.shopapp.repositories.RoleRepository;
 import com.project.shopapp.repositories.UserRepository;
 import com.project.shopapp.services.IUserService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class UserService implements IUserService {
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private RoleRepository roleRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private JWTTokenUtil jwtTokenUtil;
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JWTTokenUtil jwtTokenUtil;
+    private final AuthenticationManager authenticationManager;
 
     @Override
     public User createUser(UserDTO userDTO) throws Exception {
         String phoneNumber = userDTO.getPhoneNumber();
-        if(userRepository.existsByPhoneNumber(phoneNumber) || phoneNumber.length() != 10){
-            throw new DataIntegrityViolationException("Phone number isn't suitable");
+        String email = userDTO.getEmail();
+        if(!phoneNumber.isBlank() && userRepository.existsByPhoneNumber(phoneNumber)){
+            throw new DataIntegrityViolationException("Phone already in use");
+        }
+        if(!email.isBlank() && userRepository.existsByEmail(email)){
+            throw new DataIntegrityViolationException("Email already in use");
         }
         Role role = roleRepository.findById(userDTO.getRoleId())
                 .orElseThrow(() -> new RuntimeException("Role not found"));
@@ -50,6 +52,7 @@ public class UserService implements IUserService {
         User user = User.builder()
                 .fullName(userDTO.getFullName())
                 .phoneNumber(phoneNumber)
+                .email(email)
                 .password(userDTO.getPassword())
                 .address(userDTO.getAddress())
                 .dateOfBirth(userDTO.getDateOfBirth())
@@ -59,22 +62,67 @@ public class UserService implements IUserService {
                 .build();
         user.setRole(role);
 
-        if (userDTO.getFacebookAccountId() == 0 && userDTO.getGoogleAccountId() == 0) {
+        if (Objects.equals(userDTO.getFacebookAccountId(), "")
+                && Objects.equals(userDTO.getGoogleAccountId(), "")) {
             String password = userDTO.getPassword();
-           String encodedPassword = passwordEncoder.encode(password);
+            String encodedPassword = passwordEncoder.encode(password);
             user.setPassword(encodedPassword);
         }
         return userRepository.save(user);
     }
 
     @Override
-    public String login(String phoneNumber, String password) throws Exception {
-        Optional<User> user = userRepository.findByPhoneNumber(phoneNumber);
-        if(user.isEmpty()){
-            throw new DataIntegrityViolationException("Phone number not found");
+    public String login(UserLoginDTO userLoginDTO) throws Exception {
+        String phoneNumber = userLoginDTO.getPhoneNumber();
+        String password = userLoginDTO.getPassword();
+        String email = userLoginDTO.getEmail();
+
+        Optional<User> user = Optional.empty();
+        String subject = null;
+
+        if (userLoginDTO.getGoogle_account_id() != null) {
+            user = userRepository.findByGoogleAccountId(userLoginDTO.getGoogle_account_id());
+            subject = email;
+
+            if (user.isEmpty()) {
+                User newUser = User.builder()
+                        .fullName(userLoginDTO.getFullName())
+                        .phoneNumber(phoneNumber)
+                        .email(email)
+                        .password(userLoginDTO.getPassword())
+                        .facebookAccountId(userLoginDTO.getFacebook_account_id())
+                        .googleAccountId(userLoginDTO.getGoogle_account_id())
+                        .role(roleRepository.findById(1L).orElse(null))
+                        .active(true)
+                        .build();
+                newUser = userRepository.save(newUser);
+                user = Optional.of(newUser);
+            }
+
+            Authentication authentication =
+                    new UsernamePasswordAuthenticationToken(subject, null, user.get().getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            return jwtTokenUtil.generateToken(user.get());
         }
+
+
+        if(phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber)) {
+            user = userRepository.findByPhoneNumber(phoneNumber);
+            subject = phoneNumber;
+        }
+
+        if(user.isEmpty() && email != null) {
+            user = userRepository.findByEmail(email);
+            subject = email;
+        }
+
+        if(user.isEmpty()){
+            throw new DataIntegrityViolationException("Your information is incorrect");
+        }
+
         User existingUser = user.get();
-        if(existingUser.getFacebookAccountId() == 0 && existingUser.getGoogleAccountId() == 0){
+        if(Objects.equals(existingUser.getFacebookAccountId(), "")
+                && Objects.equals(existingUser.getGoogleAccountId(), "")){
             if(!passwordEncoder.matches(password, existingUser.getPassword())){
                 throw new BadCredentialsException("Wrong password or phone number !!");
             }
@@ -86,7 +134,11 @@ public class UserService implements IUserService {
         if(!user.get().isActive()){
             throw new DataNotFoundException("This account is not active");
         }
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(phoneNumber, password, existingUser.getAuthorities()));
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(subject,
+                        password,
+                        existingUser.getAuthorities()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         return jwtTokenUtil.generateToken(existingUser);
     }
 
@@ -96,7 +148,10 @@ public class UserService implements IUserService {
             throw new Exception("Expired or invalid token");
         }
         String phoneNumber = jwtTokenUtil.extractPhoneNumber(extraStringToken);
-        Optional<User> user = userRepository.findByPhoneNumber(phoneNumber);
+        String email = jwtTokenUtil.extractEmail(extraStringToken);
+        Optional<User> user = Optional.empty();
+        if(!Objects.equals(phoneNumber, ""))  user = userRepository.findByPhoneNumber(phoneNumber);
+        else user = userRepository.findByEmail(email);
 
         if(user.isPresent()){
             return user.get();
@@ -106,7 +161,6 @@ public class UserService implements IUserService {
         }
     }
 
-    @Transactional
     @Override
     public User updateUser(UserDTO userDTO,Long userId) throws Exception {
         User existingUser =

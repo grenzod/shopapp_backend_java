@@ -46,9 +46,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 return;
             }
             final String token = authHeader.substring(7);
-            final String phoneNumber = jwtTokenUtil.extractPhoneNumber(token);
-            if (phoneNumber != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                User userDetails = (User) userDetailsService.loadUserByUsername(phoneNumber);
+            final String subject = jwtTokenUtil.extractSubject(token);
+            if (subject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                User userDetails = (User) userDetailsService.loadUserByUsername(subject);
                 if(jwtTokenUtil.validateToken(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null,
@@ -70,7 +70,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 Pair.of(String.format("%s/products", apiPrefix), "GET"),
                 Pair.of(String.format("%s/categories", apiPrefix), "GET"),
                 Pair.of(String.format("%s/users/register", apiPrefix), "POST"),
-                Pair.of(String.format("%s/users/login", apiPrefix), "POST")
+                Pair.of(String.format("%s/users/login", apiPrefix), "POST"),
+                Pair.of(String.format("%s/users/auth", apiPrefix), "GET")
         );
 
         if(request.getMethod().equals("GET") &&

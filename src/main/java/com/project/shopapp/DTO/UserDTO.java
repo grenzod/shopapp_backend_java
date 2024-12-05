@@ -1,8 +1,10 @@
 package com.project.shopapp.DTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 import java.util.Date;
@@ -18,25 +20,29 @@ public class UserDTO {
     private String fullName;
 
     @JsonProperty("phone_number")
-    @NotBlank(message = "Phone number is required")
-    private String phoneNumber;
+    @Pattern(regexp = "^\\+?\\d{10,15}$", message = "Invalid phone number format")
+    private String phoneNumber = "";
 
-    private String address;
+    @JsonProperty("email")
+    @Email(message = "Invalid email format")
+    private String email = "";
+
+    private String address = "";
 
     @NotBlank(message = "Password can not be blank")
-    private String password;
+    private String password = "";
 
     @JsonProperty("retype_password")
-    private String retypePassword;
+    private String retypePassword = "";
 
     @JsonProperty("date_of_birth")
     private Date dateOfBirth;
 
     @JsonProperty("facebook_account_id")
-    private int facebookAccountId;
+    private String facebookAccountId;
 
     @JsonProperty("google_account_id")
-    private int googleAccountId;
+    private String googleAccountId;
 
     @NotNull(message = "Role id is required")
     @JsonProperty("role_id")

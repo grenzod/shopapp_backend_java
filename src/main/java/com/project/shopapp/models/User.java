@@ -6,10 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
@@ -29,6 +26,9 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "phone_number", length = 10, nullable = false)
     private String phoneNumber;
 
+    @Column(name = "email", length = 100)
+    private String email;
+
     @Column(name = "address", length = 200)
     private String address;
 
@@ -42,10 +42,10 @@ public class User extends BaseEntity implements UserDetails {
     private Date dateOfBirth;
 
     @Column(name = "facebook_account_id")
-    private int facebookAccountId;
+    private String facebookAccountId;
 
     @Column(name = "google_account_id")
-    private int googleAccountId;
+    private String googleAccountId;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
@@ -60,7 +60,7 @@ public class User extends BaseEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.phoneNumber;
+        return !Objects.equals(this.phoneNumber, "") ? this.phoneNumber : this.email;
     }
 
     @Override

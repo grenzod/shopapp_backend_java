@@ -96,7 +96,7 @@ public class OrderController {
         PageRequest pageable = PageRequest.of(
                 page,
                 limit,
-                Sort.by("id").ascending());
+                Sort.by("id").descending());
 
         Page<OrderResponse> orders = orderService.findByKey(key, pageable);
         int totalPage = orders.getTotalPages();

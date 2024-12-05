@@ -16,6 +16,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 @Component
@@ -29,12 +30,14 @@ public class JWTTokenUtil {
     public String generateToken(User user) throws Exception{
         Map<String, Object> claims = new HashMap<>();
         claims.put("phoneNumber", user.getPhoneNumber());
+        claims.put("email", user.getEmail());
         claims.put("userId", user.getId());
         claims.put("roleId", user.getRole().getId());
+        String subject = (!Objects.equals(user.getPhoneNumber(), "")) ? user.getPhoneNumber() : user.getEmail();
         try {
             return Jwts.builder()
                     .setClaims(claims)
-                    .setSubject(user.getPhoneNumber())
+                    .setSubject(subject)
                     .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000L))
                     .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                     .compact();
@@ -67,8 +70,16 @@ public class JWTTokenUtil {
         return expirationDate.before(new Date());
     }
 
-    public String extractPhoneNumber(String token) {
+    public String extractSubject(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractPhoneNumber(String token) {
+        return extractClaim(token, claims -> claims.get("phoneNumber", String.class));
+    }
+
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
     }
 
     public Long extractUserId(String token) {
@@ -80,8 +91,8 @@ public class JWTTokenUtil {
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
-        String phoneNumber = extractPhoneNumber(token);
-        return (phoneNumber.equals(userDetails.getUsername()))
+        String subject = extractSubject(token);
+        return (subject.equals(userDetails.getUsername()))
                 && !isTokenExpired(token); //check hạn của token
     }
 }

@@ -16,7 +16,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +23,7 @@ import java.util.List;
 import static org.springframework.http.HttpMethod.*;
 
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class WebSecurityConfig {
@@ -45,6 +44,9 @@ public class WebSecurityConfig {
                             .permitAll()
                             .requestMatchers(GET,
                                     String.format("%s/roles**", apiPrefix)).permitAll()
+
+                            .requestMatchers(GET,
+                                    String.format("%s/users/auth/**", apiPrefix)).permitAll()
 
                             .requestMatchers(GET,
                                     String.format("%s/categories**", apiPrefix)).permitAll()
@@ -77,7 +79,7 @@ public class WebSecurityConfig {
                                     String.format("%s/products/**", apiPrefix)).hasAnyRole(Role.ADMIN)
 
                             .requestMatchers(POST,
-                                    String.format("%s/orders/**", apiPrefix)).hasAnyRole(Role.USER)
+                                    String.format("%s/orders/**", apiPrefix)).permitAll()
 
 //                            .requestMatchers(GET,
 //                                    String.format("%s/orders/**", apiPrefix)).hasAnyRole(Role.USER, Role.ADMIN)
