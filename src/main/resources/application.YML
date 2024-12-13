@@ -32,12 +32,24 @@ spring:
               - openid
               - profile
               - email
+          facebook:
+            client-id: 1259772105109604
+            client-secret: 4fb5df1c7bda0308b92d44290bc7e428
+            redirect-uri: ${FACEBOOK_REDIRECT_URI:http://localhost:4200/auth/facebook/callback}
+            scope:
+              - public_profile
+              - email
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
             user-name-attribute: sub
+          facebook:
+            authorization-uri: https://www.facebook.com/v21.0/dialog/oauth
+            token-uri: https://graph.facebook.com/v21.0/oauth/access_token
+            user-info-uri: https://graph.facebook.com/v21.0/me?fields=id,name,email,picture.type(large)
+            user-name-attribute: id
       resource-server:
         opaque-token:
           introspection-uri: "http://example-introspection-url.com"

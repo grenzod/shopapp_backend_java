@@ -24,15 +24,21 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return subject -> {
+            Optional<User> userByGoogle = userRepository.findByGoogleAccountId(subject);
+            if(userByGoogle.isPresent()) {
+                return userByGoogle.get();
+            }
+
+            Optional<User> userByFacebook = userRepository.findByFacebookAccountId(subject);
+            if(userByFacebook.isPresent()) {
+                return userByFacebook.get();
+            }
+
             Optional<User> userByPhone = userRepository.findByPhoneNumber(subject);
             if(userByPhone.isPresent()) {
                 return userByPhone.get();
             }
 
-            Optional<User> userByEmail = userRepository.findByEmail(subject);
-            if(userByEmail.isPresent()) {
-                return userByEmail.get();
-            }
             throw new UsernameNotFoundException("User not found with subject " + subject);
         };
     }

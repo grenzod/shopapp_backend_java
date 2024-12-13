@@ -60,7 +60,9 @@ public class User extends BaseEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return !Objects.equals(this.phoneNumber, "") ? this.phoneNumber : this.email;
+        if(!Objects.equals(this.getGoogleAccountId(), "")) return this.getGoogleAccountId();
+        if(!Objects.equals(this.getFacebookAccountId(), "")) return this.getFacebookAccountId();
+        return this.getPhoneNumber();
     }
 
     @Override

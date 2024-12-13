@@ -1,7 +1,6 @@
 package com.project.shopapp.models;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.project.shopapp.repositories.ProductImageRepository;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,8 +17,6 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class Product extends BaseEntity {
-//    private static ProductImageRepository productImageRepository;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

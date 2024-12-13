@@ -4,9 +4,7 @@ import com.project.shopapp.DTO.UserDTO;
 import com.project.shopapp.DTO.UserLoginDTO;
 import com.project.shopapp.models.User;
 import com.project.shopapp.repositories.UserRepository;
-import com.project.shopapp.responses.LoginResponse;
-import com.project.shopapp.responses.ResponseObject;
-import com.project.shopapp.responses.UserResponse;
+import com.project.shopapp.responses.*;
 import com.project.shopapp.services.IAuthorService;
 import com.project.shopapp.services.IUserService;
 import com.project.shopapp.components.LocalizationUtil;
@@ -15,6 +13,9 @@ import com.project.shopapp.utils.MessageKeys;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +37,27 @@ public class UserController {
     private final IAuthorService iAuthorService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @GetMapping
+    public ResponseEntity<?> getUsers(
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int limit
+    ){
+        PageRequest pageRequest = PageRequest.of(
+                page,
+                limit,
+                Sort.by("id").descending()
+        );
+        Page<UserResponse> userPages = iUserService.getAllUsers(keyword, pageRequest);
+        int totalPages = userPages.getTotalPages();
+        List<UserResponse> users = userPages.getContent();
+
+        return ResponseEntity.ok(UserListResponse.builder()
+                .users(users)
+                .total(totalPages)
+                .build());
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> addUser(@Valid @RequestBody UserDTO userDTO,
@@ -115,6 +137,11 @@ public class UserController {
             name = userInfo.get("name").toString();
             email = userInfo.get("email").toString();
         }
+        if(loginType.trim().equals("facebook")){
+            accountId = userInfo.get("id").toString();
+            name = userInfo.get("name").toString();
+            email = userInfo.get("email").toString();
+        }
 
         UserLoginDTO userLoginDTO = UserLoginDTO.builder()
                 .email(email)
@@ -159,6 +186,17 @@ public class UserController {
             }
 
             User userUpdate = userService.updateUser(userDTO, userId);
+            return ResponseEntity.ok().body(UserResponse.fromUser(userUpdate));
+        }
+        catch (Exception e){
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("delete/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long userId){
+        try {
+            User userUpdate = userService.deleteUser(userId);
             return ResponseEntity.ok().body(UserResponse.fromUser(userUpdate));
         }
         catch (Exception e){

@@ -5,13 +5,18 @@ import com.project.shopapp.DTO.UserLoginDTO;
 import com.project.shopapp.components.JWTTokenUtil;
 import com.project.shopapp.exceptions.DataNotFoundException;
 import com.project.shopapp.exceptions.PermissionDenyException;
+import com.project.shopapp.models.Product;
 import com.project.shopapp.models.Role;
 import com.project.shopapp.models.User;
 import com.project.shopapp.repositories.RoleRepository;
 import com.project.shopapp.repositories.UserRepository;
+import com.project.shopapp.responses.ProductResponse;
+import com.project.shopapp.responses.UserResponse;
 import com.project.shopapp.services.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -81,22 +86,11 @@ public class UserService implements IUserService {
         String subject = null;
 
         if (userLoginDTO.getGoogle_account_id() != null) {
-            user = userRepository.findByGoogleAccountId(userLoginDTO.getGoogle_account_id());
-            subject = email;
+            subject = "Google:" + userLoginDTO.getGoogle_account_id();
+            user = userRepository.findByGoogleAccountId(subject);
 
             if (user.isEmpty()) {
-                User newUser = User.builder()
-                        .fullName(userLoginDTO.getFullName())
-                        .phoneNumber(phoneNumber)
-                        .email(email)
-                        .password(userLoginDTO.getPassword())
-                        .facebookAccountId(userLoginDTO.getFacebook_account_id())
-                        .googleAccountId(userLoginDTO.getGoogle_account_id())
-                        .role(roleRepository.findById(1L).orElse(null))
-                        .active(true)
-                        .build();
-                newUser = userRepository.save(newUser);
-                user = Optional.of(newUser);
+                user = addUser(userLoginDTO, phoneNumber, email, subject);
             }
 
             Authentication authentication =
@@ -105,7 +99,20 @@ public class UserService implements IUserService {
             return jwtTokenUtil.generateToken(user.get());
         }
 
+        if (userLoginDTO.getFacebook_account_id() != null) {
+            subject = "FaceBook:" + userLoginDTO.getFacebook_account_id();
+            user = userRepository.findByFacebookAccountId(subject);
 
+            if (user.isEmpty()) {
+                user = addUser(userLoginDTO, phoneNumber, email, subject);
+            }
+
+            Authentication authentication =
+                    new UsernamePasswordAuthenticationToken(subject, null, user.get().getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            return jwtTokenUtil.generateToken(user.get());
+        }
+        
         if(phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber)) {
             user = userRepository.findByPhoneNumber(phoneNumber);
             subject = phoneNumber;
@@ -147,11 +154,16 @@ public class UserService implements IUserService {
         if(jwtTokenUtil.isTokenExpired(extraStringToken)){
             throw new Exception("Expired or invalid token");
         }
+        String subject = jwtTokenUtil.extractSubject(extraStringToken);
         String phoneNumber = jwtTokenUtil.extractPhoneNumber(extraStringToken);
-        String email = jwtTokenUtil.extractEmail(extraStringToken);
-        Optional<User> user = Optional.empty();
-        if(!Objects.equals(phoneNumber, ""))  user = userRepository.findByPhoneNumber(phoneNumber);
-        else user = userRepository.findByEmail(email);
+        Optional<User> user;
+        if(!Objects.equals(phoneNumber, subject)){
+            user = userRepository.findByGoogleAccountId(subject);
+            if(user.isEmpty()){
+                user = userRepository.findByFacebookAccountId(subject);
+            }
+        }
+        else user = userRepository.findByPhoneNumber(phoneNumber);
 
         if(user.isPresent()){
             return user.get();
@@ -173,5 +185,33 @@ public class UserService implements IUserService {
         }
 
         return userRepository.save(existingUser);
+    }
+
+    @Override
+    public User deleteUser(Long userId) throws Exception {
+        User user = userRepository.findById(userId).orElseThrow(() -> new DataNotFoundException("Not found User"));
+        user.setActive(false);
+        return userRepository.save(user);
+    }
+
+    @Override
+    public Page<UserResponse> getAllUsers(String keyword, PageRequest pageRequest) {
+        Page<User> usersPage = userRepository.searchUsers(keyword, pageRequest);
+        return usersPage.map(UserResponse::fromUser);
+    }
+    
+    private Optional<User> addUser(UserLoginDTO userLoginDTO, String phoneNumber, String email, String subject){
+        User newUser = User.builder()
+                .fullName(userLoginDTO.getFullName())
+                .phoneNumber(phoneNumber)
+                .email(email)
+                .password(userLoginDTO.getPassword())
+                .facebookAccountId(userLoginDTO.getFacebook_account_id())
+                .googleAccountId(subject)
+                .role(roleRepository.findById(1L).orElse(null))
+                .active(true)
+                .build();
+        newUser = userRepository.save(newUser);
+        return Optional.of(newUser);
     }
 }

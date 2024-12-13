@@ -33,7 +33,7 @@ public class JWTTokenUtil {
         claims.put("email", user.getEmail());
         claims.put("userId", user.getId());
         claims.put("roleId", user.getRole().getId());
-        String subject = (!Objects.equals(user.getPhoneNumber(), "")) ? user.getPhoneNumber() : user.getEmail();
+        String subject = getSubject(user);
         try {
             return Jwts.builder()
                     .setClaims(claims)
@@ -45,6 +45,12 @@ public class JWTTokenUtil {
         catch (Exception e) {
             throw new InvalidParameterException("Can not create jwt token " + e.getMessage());
         }
+    }
+
+    private String getSubject(User user){
+        if(!Objects.equals(user.getGoogleAccountId(), "")) return user.getGoogleAccountId();
+        if(!Objects.equals(user.getFacebookAccountId(), "")) return user.getFacebookAccountId();
+        return user.getPhoneNumber();
     }
 
     private Key getSignInKey() {
