@@ -25,16 +25,16 @@ spring:
       client:
         registration:
           google:
-            client-id: 97309636980-6bmlh4p19iodbfcioaa3bcdjpg44pibl.apps.googleusercontent.com
-            client-secret: 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
+            client-id:
+            client-secret: 
             redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:4200/auth/google/callback}
             scope:
               - openid
               - profile
               - email
           facebook:
-            client-id: 1259772105109604
-            client-secret: 4fb5df1c7bda0308b92d44290bc7e428
+            client-id:
+            client-secret:
             redirect-uri: ${FACEBOOK_REDIRECT_URI:http://localhost:4200/auth/facebook/callback}
             scope:
               - public_profile
