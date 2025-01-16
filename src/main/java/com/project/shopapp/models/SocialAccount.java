@@ -27,4 +27,7 @@ public class SocialAccount {
     @Column(name = "email", length = 150)
     private String email;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }

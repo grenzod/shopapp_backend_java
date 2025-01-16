@@ -11,7 +11,7 @@ import com.project.shopapp.repositories.ProductImageRepository;
 import com.project.shopapp.repositories.ProductRepository;
 import com.project.shopapp.responses.ProductResponse;
 import com.project.shopapp.services.IProductService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,14 +20,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class ProductService implements IProductService {
 
-    @Autowired
-    private ProductRepository productRepository;
-    @Autowired
-    private CategoryRepository categoryRepository;
-    @Autowired
-    private ProductImageRepository productImageRepository;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductImageRepository productImageRepository;
 
     @Override
     public Product createProduct(ProductDTO productDTO) throws DataNotFoundException {
@@ -99,7 +97,7 @@ public class ProductService implements IProductService {
     public ProductImage createProductImage(Long productId, ProductImageDTO productImageDTO) throws Exception{
         Product product = productRepository
                 .findById(productId)
-                .orElseThrow(() -> new DataNotFoundException("Cannot found this product image!"));
+                .orElseThrow(() -> new DataNotFoundException("Cannot found this product!"));
 
         ProductImage productImage = ProductImage.builder()
                 .product(product)
