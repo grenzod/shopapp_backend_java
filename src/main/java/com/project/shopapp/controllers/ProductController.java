@@ -1,16 +1,21 @@
 package com.project.shopapp.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.javafaker.Faker;
 import com.project.shopapp.DTO.ProductDTO;
 import com.project.shopapp.DTO.ProductImageDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
 import com.project.shopapp.models.Product;
 import com.project.shopapp.models.ProductImage;
+import com.project.shopapp.models.ProductListener;
 import com.project.shopapp.responses.ProductListResponse;
 import com.project.shopapp.responses.ProductResponse;
+import com.project.shopapp.services.IProductRedisService;
 import com.project.shopapp.services.impl.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +43,8 @@ import java.util.stream.Collectors;
 public class ProductController {
 
     private final ProductService productService;
+    private final IProductRedisService iProductRedisService;
+    private static final Logger logger = LoggerFactory.getLogger(ProductListener.class);
 
     @GetMapping
     public ResponseEntity<ProductListResponse> getAllProducts(
@@ -45,17 +52,22 @@ public class ProductController {
             @RequestParam(defaultValue = "0") Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit
-    ) {
+    ) throws JsonProcessingException {
         PageRequest pageRequest = PageRequest.of(
                 page,
                 limit,
                 Sort.by("id").ascending()
 //                Sort.by("createdAt").descending()
         );
-
-        Page<ProductResponse> productPages = productService.getAllProducts(keyword, categoryId, pageRequest);
-        int totalPages = productPages.getTotalPages();
-        List<ProductResponse> products = productPages.getContent();
+        int totalPages = 0;
+        logger.info(String.format("keyword: %s, category_id: %d, page: %d, limit: %d", keyword, categoryId, page, limit));
+        List<ProductResponse> products = iProductRedisService.getAllProducts(keyword, categoryId, pageRequest);
+        if (products == null) {
+            Page<ProductResponse> productPages = productService.getAllProducts(keyword, categoryId, pageRequest);
+            totalPages = productPages.getTotalPages();
+            products = productPages.getContent();
+            iProductRedisService.saveAllProducts(products, keyword, categoryId, pageRequest);
+        }
 
         return ResponseEntity.ok(ProductListResponse.builder()
                 .products(products)
@@ -80,7 +92,6 @@ public class ProductController {
                         .contentType(MediaType.IMAGE_JPEG)
                         .body(resource);
             }
-//                return ResponseEntity.notFound().build();
             else{
                 return ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_JPEG)
@@ -221,10 +232,10 @@ public class ProductController {
             }
             ProductDTO productDTO = ProductDTO.builder()
                     .name(productName)
-                    .price((float)faker.number().numberBetween(10, 90_000_000))
+                    .price((float)faker.number().numberBetween(10, 1000))
                     .description(faker.lorem().sentence())
                     .thumbnail(null)
-                    .categoryId((long)faker.number().numberBetween(2, 4))
+                    .categoryId((long)faker.number().numberBetween(1, 4))
                     .build();
             productService.createProduct(productDTO);
         }
