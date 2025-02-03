@@ -32,7 +32,8 @@ public class WebSecurityConfig {
                     requests
                             .requestMatchers(
                                     String.format("%s/users/login", apiPrefix),
-                                    String.format("%s/users/register", apiPrefix)
+                                    String.format("%s/users/register", apiPrefix),
+                                    String.format("%s/users/logout", apiPrefix)
                             )
                             .permitAll()
                             .requestMatchers(GET,
@@ -99,6 +100,8 @@ public class WebSecurityConfig {
                             .requestMatchers(DELETE,
                                     String.format("%s/order_details/**", apiPrefix)).hasRole(Role.ADMIN)
 
+                            .requestMatchers(POST,
+                                    String.format("%s/payment/**", apiPrefix)).hasAnyRole(Role.USER, Role.ADMIN)
                             .anyRequest().authenticated();
                 })
                 .csrf(AbstractHttpConfigurer::disable);

@@ -6,6 +6,7 @@ import com.project.shopapp.models.User;
 import com.project.shopapp.repositories.UserRepository;
 import com.project.shopapp.responses.*;
 import com.project.shopapp.services.IAuthorService;
+import com.project.shopapp.services.ITokenService;
 import com.project.shopapp.services.IUserService;
 import com.project.shopapp.components.LocalizationUtil;
 import com.project.shopapp.services.impl.UserService;
@@ -37,6 +38,7 @@ public class UserController {
     private final IAuthorService iAuthorService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ITokenService iTokenService;
 
     @GetMapping
     public ResponseEntity<?> getUsers(
@@ -93,9 +95,13 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> logUser(@Valid @RequestBody UserLoginDTO userLoginDTO) {
+    public ResponseEntity<LoginResponse> logUser(@Valid @RequestBody UserLoginDTO userLoginDTO,
+                                                 HttpServletRequest request) {
         try {
             String token = iUserService.login(userLoginDTO);
+            String userAgent = request.getHeader("X-User-Agent");
+            User user = iUserService.getUserDetailFromToken(token);
+            iTokenService.addToken(user, token, isMobileDev(userAgent));
 
             return ResponseEntity.ok().body(LoginResponse.builder()
                             .message(LocalizationUtil.getLocaleMessage(MessageKeys.LOGIN_SUCCESSFULLY))
@@ -159,7 +165,13 @@ public class UserController {
             userLoginDTO.setGoogle_account_id("");
         }
 
-        return this.logUser(userLoginDTO);
+        return this.logUser(userLoginDTO, request);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authorization){
+        String token = authorization.substring(7);
+        return ResponseEntity.ok().body(iTokenService.deleteToken(token));
     }
 
     @PostMapping("/details")
@@ -202,5 +214,9 @@ public class UserController {
         catch (Exception e){
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    private boolean isMobileDev(String UserAgent){
+        return UserAgent.toLowerCase().contains("mobile");
     }
 }

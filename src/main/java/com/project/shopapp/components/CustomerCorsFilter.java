@@ -22,7 +22,7 @@ public class CustomerCorsFilter extends OncePerRequestFilter {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE");
         response.setHeader("Access-Control-Max-Age", "3600");
-        response.setHeader("Access-Control-Allow-Headers", "authorization, content-type, xsrf-token");
+        response.setHeader("Access-Control-Allow-Headers", "authorization, content-type, xsrf-token, X-User-Agent");
         response.setHeader("Access-Control-Allow-Credentials", "true");
         response.addHeader("Access-Control-Expose-Headers", "xsrf-token");
 

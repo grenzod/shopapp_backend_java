@@ -15,4 +15,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "(:key is null or :key = '' or p.fullName like %:key% " +
             "or p.address like %:key% or p.note like %:key%)")
     Page<Order> findByKey(String key, Pageable pageable);
+
+    Order findByTrackingNumber(String trackingNumber);
 }

@@ -40,6 +40,7 @@ CREATE TABLE tokens (
     user_id INT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+ALTER TABLE tokens ADD COLUMN is_mobile tinyint(1) DEFAULT 0;
 
 -- Bảng tài khoản mạng xã hội (social_accounts)
 CREATE TABLE social_accounts (

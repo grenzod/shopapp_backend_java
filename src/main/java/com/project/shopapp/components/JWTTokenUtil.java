@@ -1,6 +1,8 @@
 package com.project.shopapp.components;
 
+import com.project.shopapp.models.Token;
 import com.project.shopapp.models.User;
+import com.project.shopapp.repositories.TokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -26,6 +28,7 @@ public class JWTTokenUtil {
     private int expiration;
     @Value("${jwt.secretKey}")
     private String secretKey;
+    private final TokenRepository tokenRepository;
 
     public String generateToken(User user) throws Exception{
         Map<String, Object> claims = new HashMap<>();
@@ -38,7 +41,7 @@ public class JWTTokenUtil {
             return Jwts.builder()
                     .setClaims(claims)
                     .setSubject(subject)
-                    .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000L))
+                    .setExpiration(new Date(System.currentTimeMillis() + expiration))
                     .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                     .compact();
         }
@@ -98,6 +101,11 @@ public class JWTTokenUtil {
 
     public boolean validateToken(String token, UserDetails userDetails) {
         String subject = extractSubject(token);
+        Token existingToken = tokenRepository.findByToken(token);
+        if(existingToken == null || existingToken.isRevoked()){
+            return false;
+        }
+
         return (subject.equals(userDetails.getUsername()))
                 && !isTokenExpired(token); //check hạn của token
     }

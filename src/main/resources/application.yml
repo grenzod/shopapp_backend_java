@@ -68,3 +68,12 @@ api:
 jwt:
   expiration: 2592000
   secretKey: TaqlmGv1iEDMRiFp/pHuID1+T84IABfuA0xXh4GhiUI=
+payment:
+  vnPay:
+    url: ${PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+    tmnCode: ${TMN_CODE:3CKZLZ1T}
+    secretKey: ${SECRET_KEY:DA2ABWODO06S23NNCNOF8LN9ZVIYX4AQ}
+    returnUrl: ${RETURN_URL:http://localhost:4200/user/VNPay}
+    version: ${VERSION:2.1.0}
+    command: ${COMMAND:pay}
+    orderType: ${ORDER_TYPE:other}
