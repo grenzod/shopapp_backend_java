@@ -19,6 +19,7 @@ Backend for ShopApp — a Spring Boot REST + event-driven service that uses Apac
 
 ## What this repo contains
 
+```text
 src/main/java/com/project/shopapp
 ├── config/          # Configurations (Kafka, Async, DB, Redis)
 ├── controllers/     # REST HTTP endpoints
