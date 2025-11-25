@@ -1,12 +1,11 @@
 package com.project.shopapp.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.javafaker.Faker;
 import com.project.shopapp.DTO.ProductDTO;
 import com.project.shopapp.DTO.ProductImageDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
-import com.project.shopapp.models.Product;
-import com.project.shopapp.models.ProductImage;
+import com.project.shopapp.models.Entities.Product;
+import com.project.shopapp.models.Entities.ProductImage;
 import com.project.shopapp.models.ProductListener;
 import com.project.shopapp.responses.ProductListResponse;
 import com.project.shopapp.responses.ProductResponse;
@@ -222,23 +221,4 @@ public class ProductController {
         }
     }
 
-    @PostMapping("/generateFakeProducts")
-    public ResponseEntity<String> generateFakeProducts() throws DataNotFoundException {
-        Faker faker = new Faker();
-        for(int i = 1; i <= 5_000; i++){
-            String productName = faker.commerce().productName();
-            if(productService.existsByName(productName)) {
-                continue;
-            }
-            ProductDTO productDTO = ProductDTO.builder()
-                    .name(productName)
-                    .price((float)faker.number().numberBetween(10, 1000))
-                    .description(faker.lorem().sentence())
-                    .thumbnail(null)
-                    .categoryId((long)faker.number().numberBetween(1, 4))
-                    .build();
-            productService.createProduct(productDTO);
-        }
-        return ResponseEntity.ok("Fake product successfully");
-    }
 }

@@ -1,7 +1,7 @@
 package com.project.shopapp.components;
 
-import com.project.shopapp.models.Token;
-import com.project.shopapp.models.User;
+import com.project.shopapp.models.Entities.Token;
+import com.project.shopapp.models.Entities.User;
 import com.project.shopapp.repositories.TokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

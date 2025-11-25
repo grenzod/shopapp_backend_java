@@ -1,6 +1,6 @@
 package com.project.shopapp.services;
 
-import com.project.shopapp.models.Role;
+import com.project.shopapp.models.Entities.Role;
 
 import java.util.List;
 

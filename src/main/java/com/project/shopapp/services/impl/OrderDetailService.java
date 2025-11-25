@@ -1,10 +1,11 @@
 package com.project.shopapp.services.impl;
 
+import com.project.shopapp.DTO.OrderDTO;
 import com.project.shopapp.DTO.OrderDetailDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
-import com.project.shopapp.models.Order;
-import com.project.shopapp.models.OrderDetail;
-import com.project.shopapp.models.Product;
+import com.project.shopapp.models.Entities.Order;
+import com.project.shopapp.models.Entities.OrderDetail;
+import com.project.shopapp.models.Entities.Product;
 import com.project.shopapp.repositories.OrderDetailRepository;
 import com.project.shopapp.repositories.OrderRepository;
 import com.project.shopapp.repositories.ProductRepository;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ public class OrderDetailService implements IOrderDetailService {
     public OrderDetail createOrderDetail(OrderDetailDTO orderDetailDTO) throws Exception {
         Order order = orderRepository.findById(orderDetailDTO.getOrderId())
                 .orElseThrow(() -> new DataNotFoundException(
-                        "Cannot find Order with id : "+orderDetailDTO.getOrderId()));
+                        "Cannot find Order with id : " + orderDetailDTO.getOrderId()));
 
         Product product = productRepository.findById(orderDetailDTO.getProductId())
                 .orElseThrow(() -> new DataNotFoundException(
@@ -42,6 +44,38 @@ public class OrderDetailService implements IOrderDetailService {
                 .build();
 
         return orderDetailRepository.save(orderDetail);
+    }
+
+    public void createOrderDetails(OrderDTO orderDTO) {
+        try {
+            Order order = orderRepository.findByOrderId(orderDTO.getOrderId())
+                    .orElseThrow(() -> new DataNotFoundException("Order not found: " + orderDTO.getOrderId()));
+
+            List<OrderDetail> orderDetails = orderDTO.getCartItems().stream()
+                    .map(item -> {
+                        try {
+                            Product product = productRepository.findById(item.getProductId())
+                                    .orElseThrow(() -> new DataNotFoundException("Product not found: " + item.getProductId()));
+
+                            return OrderDetail.builder()
+                                    .order(order)
+                                    .product(product)
+                                    .price(product.getPrice())
+                                    .numberOfProducts(item.getQuantity())
+                                    .totalMoney(product.getPrice() * item.getQuantity())
+                                    .status("RESERVED")
+                                    .build();
+                        } catch (DataNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+            orderDetailRepository.saveAll(orderDetails);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create order details: " + e.getMessage(), e);
+        }
     }
 
     @Override

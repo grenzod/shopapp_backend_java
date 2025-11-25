@@ -5,12 +5,10 @@ import com.project.shopapp.DTO.UserLoginDTO;
 import com.project.shopapp.components.JWTTokenUtil;
 import com.project.shopapp.exceptions.DataNotFoundException;
 import com.project.shopapp.exceptions.PermissionDenyException;
-import com.project.shopapp.models.Product;
-import com.project.shopapp.models.Role;
-import com.project.shopapp.models.User;
+import com.project.shopapp.models.Entities.Role;
+import com.project.shopapp.models.Entities.User;
 import com.project.shopapp.repositories.RoleRepository;
 import com.project.shopapp.repositories.UserRepository;
-import com.project.shopapp.responses.ProductResponse;
 import com.project.shopapp.responses.UserResponse;
 import com.project.shopapp.services.IUserService;
 import lombok.RequiredArgsConstructor;
@@ -208,7 +206,7 @@ public class UserService implements IUserService {
                 .password(userLoginDTO.getPassword())
                 .facebookAccountId(userLoginDTO.getFacebook_account_id())
                 .googleAccountId(subject)
-                .role(roleRepository.findById(1L).orElse(null))
+                .role(roleRepository.findById(1).orElse(null))
                 .active(true)
                 .build();
         newUser = userRepository.save(newUser);

@@ -1,8 +1,8 @@
 package com.project.shopapp.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.project.shopapp.models.Role;
-import com.project.shopapp.models.User;
+import com.project.shopapp.models.Entities.Role;
+import com.project.shopapp.models.Entities.User;
 import lombok.*;
 
 import java.util.Date;

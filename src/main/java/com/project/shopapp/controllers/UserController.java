@@ -2,7 +2,7 @@ package com.project.shopapp.controllers;
 
 import com.project.shopapp.DTO.UserDTO;
 import com.project.shopapp.DTO.UserLoginDTO;
-import com.project.shopapp.models.User;
+import com.project.shopapp.models.Entities.User;
 import com.project.shopapp.repositories.UserRepository;
 import com.project.shopapp.responses.*;
 import com.project.shopapp.services.IAuthorService;
@@ -118,8 +118,7 @@ public class UserController {
     @GetMapping("/auth/social-login")
     public ResponseEntity<String> socialLogin(@RequestParam("login_type") String loginType,
                                               HttpServletRequest request) {
-        loginType = loginType.trim().toLowerCase();
-        String url = iAuthorService.generateAuthor(loginType);
+        String url = iAuthorService.generateAuthor(loginType.trim().toLowerCase());
         return ResponseEntity.ok().body(url);
     }
 

@@ -1,12 +1,23 @@
-#spring.application.name = shopapp
 server:
   port: 8088
+
 spring:
+  application:
+    name: shop_app_back_end
+  threads:
+    virtual:
+      enabled: true
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/shopapp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    url: ${SPRING_DATASOURCE_URL:SPRING_DATASOURCE_URL}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:175003}
+    username: ${SPRING_DATASOURCE_USERNAME:SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD:SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 20
+      connection-timeout: 30000
+      max-lifetime: 1800000
+      idle-timeout: 300000
   jpa:
     show-sql: true
     hibernate:
@@ -15,6 +26,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
   servlet:
     multipart:
       max-file-size: 10MB
@@ -28,16 +43,16 @@ spring:
       client:
         registration:
           google:
-            client-id: 97309636980-6bmlh4p19iodbfcioaa3bcdjpg44pibl.apps.googleusercontent.com
-            client-secret: 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
+            client-id: GOOGLE_CLIENT_ID
+            client-secret: GOOGLE_CLIENT_SECRET
             redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:4200/auth/google/callback}
             scope:
               - openid
               - profile
               - email
           facebook:
-            client-id: 1259772105109604
-            client-secret: 4fb5df1c7bda0308b92d44290bc7e428
+            client-id: FACEBOOK_CLIENT_ID
+            client-secret: FACEBOOK_CLIENT_SECRET
             redirect-uri: ${FACEBOOK_REDIRECT_URI:http://localhost:4200/auth/facebook/callback}
             scope:
               - public_profile
@@ -58,21 +73,44 @@ spring:
           introspection-uri: "http://example-introspection-url.com"
           client-id: <your-client-id>
           client-secret: <your-client-secret>
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    consumer:
+      group-id: order-processor
+      auto-offset-reset: latest
+      enable-auto-commit: false
+      max-poll-records: 500
+      fetch-max-wait: 2000
+      fetch-min-size: 1
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: true
+        spring.json.type.mapping: "orderDTO:com.project.shopapp.DTO.OrderDTO"
+        spring.json.value.default.type: "com.project.shopapp.DTO.OrderDTO"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer:  org.springframework.kafka.support.serializer.JsonSerializer
+    properties:
+      security.protocol: PLAINTEXT
+    listener:
+      concurrency: 5
+      ack-mode: manual
+      missing-topics-fatal: false
 
-#  messages:
-#    basename: i18n/messages
-#    encoding: UTF-8
-#    default-locale: en
 api:
   prefix: api/v1
+
 jwt:
   expiration: 2592000
-  secretKey: TaqlmGv1iEDMRiFp/pHuID1+T84IABfuA0xXh4GhiUI=
+  secretKey: $(JWT_SECRET:JWT_SECRET)
+
 payment:
   vnPay:
     url: ${PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-    tmnCode: ${TMN_CODE:3CKZLZ1T}
-    secretKey: ${SECRET_KEY:DA2ABWODO06S23NNCNOF8LN9ZVIYX4AQ}
+    tmnCode: ${TMN_CODE:TMN_CODE}
+    secretKey: ${SECRET_KEY:SECRET_KEY}
     returnUrl: ${RETURN_URL:http://localhost:4200/user/VNPay}
     version: ${VERSION:2.1.0}
     command: ${COMMAND:pay}

@@ -2,7 +2,7 @@ package com.project.shopapp.services;
 
 import com.project.shopapp.DTO.OrderDetailDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
-import com.project.shopapp.models.OrderDetail;
+import com.project.shopapp.models.Entities.OrderDetail;
 
 import java.util.List;
 

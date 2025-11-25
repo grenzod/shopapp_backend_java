@@ -2,7 +2,7 @@ package com.project.shopapp.services;
 
 import com.project.shopapp.DTO.OrderDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
-import com.project.shopapp.models.Order;
+import com.project.shopapp.models.Entities.Order;
 import com.project.shopapp.responses.OrderResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

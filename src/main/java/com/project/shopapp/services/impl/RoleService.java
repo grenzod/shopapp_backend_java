@@ -1,6 +1,6 @@
 package com.project.shopapp.services.impl;
 
-import com.project.shopapp.models.Role;
+import com.project.shopapp.models.Entities.Role;
 import com.project.shopapp.repositories.RoleRepository;
 import com.project.shopapp.services.IRoleService;
 import lombok.RequiredArgsConstructor;

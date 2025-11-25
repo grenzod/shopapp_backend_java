@@ -1,7 +1,7 @@
 package com.project.shopapp.services.impl;
 
-import com.project.shopapp.models.Token;
-import com.project.shopapp.models.User;
+import com.project.shopapp.models.Entities.Token;
+import com.project.shopapp.models.Entities.User;
 import com.project.shopapp.repositories.TokenRepository;
 import com.project.shopapp.services.ITokenService;
 import lombok.RequiredArgsConstructor;

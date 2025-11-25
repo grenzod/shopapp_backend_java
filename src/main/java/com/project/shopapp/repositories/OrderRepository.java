@@ -1,12 +1,13 @@
 package com.project.shopapp.repositories;
 
-import com.project.shopapp.models.Order;
+import com.project.shopapp.models.Entities.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserId(long id);
@@ -16,5 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "or p.address like %:key% or p.note like %:key%)")
     Page<Order> findByKey(String key, Pageable pageable);
 
-    Order findByTrackingNumber(String trackingNumber);
+    Optional<Order> findByOrderId(String id);
+
 }

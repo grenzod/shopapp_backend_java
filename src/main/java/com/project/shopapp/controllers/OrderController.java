@@ -2,15 +2,14 @@ package com.project.shopapp.controllers;
 
 import com.project.shopapp.DTO.OrderDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
-import com.project.shopapp.models.Order;
+import com.project.shopapp.models.Entities.Order;
 import com.project.shopapp.responses.OrderListResponse;
 import com.project.shopapp.responses.OrderResponse;
 import com.project.shopapp.services.impl.OrderService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,14 +21,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("${api.prefix}/orders")
+@RequiredArgsConstructor
 public class OrderController {
 
-    @Autowired
-    private OrderService orderService;
+    private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<?> addOrder(@Valid @RequestBody OrderDTO orderDTO,
-                                      BindingResult result) {
+    public ResponseEntity<?> createOrder(@Valid @RequestBody OrderDTO orderDTO,
+                                         BindingResult result) {
         try {
             if(result.hasErrors()) {
                 List<String> errorMessages = result.getFieldErrors()
@@ -40,9 +39,20 @@ public class OrderController {
             }
 
             Order order = orderService.createOrder(orderDTO);
-            return ResponseEntity.ok().body(order);
+            return ResponseEntity.ok(OrderResponse.fromOrder(order));
         }
         catch(Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{orderId}/status")
+    public ResponseEntity<?> getOrderStatus(@PathVariable String orderId) {
+        try {
+            String status = orderService.getOrderStatus(orderId).getStatus();
+            return ResponseEntity.ok(status);
+        }
+        catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

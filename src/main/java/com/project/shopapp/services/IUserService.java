@@ -2,7 +2,7 @@ package com.project.shopapp.services;
 
 import com.project.shopapp.DTO.UserDTO;
 import com.project.shopapp.DTO.UserLoginDTO;
-import com.project.shopapp.models.User;
+import com.project.shopapp.models.Entities.User;
 import com.project.shopapp.responses.UserResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Data
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -13,5 +11,9 @@ public class CartItemDTO {
     @JsonProperty("product_id")
     private Long productId;
 
-    private int quantity;
+    private String name;
+
+    private String status = "In stock";
+
+    private int quantity = -1;
 }

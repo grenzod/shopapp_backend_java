@@ -1,52 +1,95 @@
-version: '3.8'
 services:
   mysql:
-    container_name: please-mysql
+    container_name: shop-app-mysql
     image: mysql:8.2.0
-    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 175003
       MYSQL_DATABASE: shopapp
     ports:
       - '3307:3306'
     volumes:
-      - mysql-data:/var/lib/mysql
+      - ./mysql-data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - springboot-mysql-network
+      - spring-boot-mysql-network
 
   redis:
     image: docker.io/redis:7.2.3
-    container_name: please-redis
-    restart: always
+    container_name: shop-app-redis
     ports:
       - "6379:6379"
     volumes:
       - ./redis-data:/data
     networks:
-      - springboot-mysql-network
+      - spring-boot-mysql-network
 
   app:
-    container_name: spring_boot_app
+    container_name: shop-app
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
       - mysql
+      - redis
+      - broker
     ports:
       - '8088:8088'
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/shopapp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 175003
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+    env_file:
+      - .env
     networks:
-      - springboot-mysql-network
+      - spring-boot-mysql-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:6.2.0
+    container_name: zookeeper-shop-app
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - spring-boot-mysql-network
+
+  broker:
+    image: confluentinc/cp-kafka:6.2.0
+    container_name: broker-shop-app
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,INTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    networks:
+      - spring-boot-mysql-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - broker
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - spring-boot-mysql-network
 
 volumes:
   mysql-data:
 
 networks:
-  springboot-mysql-network:
+  spring-boot-mysql-network:
     driver: bridge

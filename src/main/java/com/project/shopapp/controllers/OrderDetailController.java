@@ -2,7 +2,7 @@ package com.project.shopapp.controllers;
 
 import com.project.shopapp.DTO.OrderDetailDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
-import com.project.shopapp.models.OrderDetail;
+import com.project.shopapp.models.Entities.OrderDetail;
 import com.project.shopapp.responses.OrderDetailResponse;
 import com.project.shopapp.services.impl.OrderDetailService;
 import jakarta.validation.Valid;

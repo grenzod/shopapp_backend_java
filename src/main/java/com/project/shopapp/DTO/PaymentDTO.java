@@ -3,8 +3,6 @@ package com.project.shopapp.DTO;
 import lombok.*;
 
 @Data
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder

@@ -11,8 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Data
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -24,8 +22,13 @@ public class ProductDTO {
     @Min(value=0,message = "price must be greater than or equal 0")
     @Max(value=1000000000,message = "price must be less than or equal 1000000000")
     private Float price;
+
     private String thumbnail;
+
     private String description;
+
+    private Integer quantity;
+
     @JsonProperty("category_id")
     private Long categoryId;
 

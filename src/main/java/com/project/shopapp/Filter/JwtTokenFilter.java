@@ -1,7 +1,7 @@
 package com.project.shopapp.Filter;
 
 import com.project.shopapp.components.JWTTokenUtil;
-import com.project.shopapp.models.User;
+import com.project.shopapp.models.Entities.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,9 +32,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JWTTokenUtil jwtTokenUtil;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request
-            , @NonNull HttpServletResponse response
-            , @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             if(isBypassToken(request)) {
                 filterChain.doFilter(request, response);

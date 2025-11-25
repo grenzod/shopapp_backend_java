@@ -1,12 +1,16 @@
 package com.project.shopapp.services.impl;
 
+import com.project.shopapp.DTO.CartItemDTO;
 import com.project.shopapp.DTO.ProductDTO;
 import com.project.shopapp.DTO.ProductImageDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
-import com.project.shopapp.models.Category;
-import com.project.shopapp.models.Product;
-import com.project.shopapp.models.ProductImage;
+import com.project.shopapp.models.Entities.Category;
+import com.project.shopapp.models.Entities.OrderDetail;
+import com.project.shopapp.models.Entities.Product;
+import com.project.shopapp.models.Entities.ProductImage;
+import com.project.shopapp.models.InventoryReservationResult;
 import com.project.shopapp.repositories.CategoryRepository;
+import com.project.shopapp.repositories.OrderDetailRepository;
 import com.project.shopapp.repositories.ProductImageRepository;
 import com.project.shopapp.repositories.ProductRepository;
 import com.project.shopapp.responses.ProductResponse;
@@ -15,9 +19,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +34,7 @@ public class ProductService implements IProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final OrderDetailRepository orderDetailRepository;
     private final ProductImageRepository productImageRepository;
 
     @Override
@@ -39,8 +49,70 @@ public class ProductService implements IProductService {
                 .thumbnail(productDTO.getThumbnail())
                 .description(productDTO.getDescription())
                 .category(category)
+                .quantity(productDTO.getQuantity())
                 .build();
         return productRepository.save(product);
+    }
+
+    @Transactional(rollbackFor = {Exception.class})
+    public InventoryReservationResult reserveInventoryAtomically(String orderId, List<CartItemDTO> cartItems) {
+        List<Long> productIds = cartItems.stream()
+                .map(CartItemDTO::getProductId)
+                .toList();
+
+        Map<Long, Integer> availableQuantities = getAvailableQuantities(productIds);
+        List<Long> ids = new ArrayList<>();
+        for (CartItemDTO item : cartItems) {
+            Integer availableQty = availableQuantities.get(item.getProductId());
+            if (availableQty == null || availableQty < item.getQuantity()) {
+                ids.add(item.getProductId());
+            }
+        }
+        if (!ids.isEmpty()) {
+            List<Long> orderDetailIds = orderDetailRepository.findOrderDetailsNew(orderId, ids)
+                    .stream()
+                    .map(OrderDetail::getId).toList();
+            orderDetailRepository.updateStatusByIds("Out of Stock", orderDetailIds);
+            return InventoryReservationResult.failed(
+                    "Products "
+                            + ids.stream().map(a -> {
+                        try {
+                            return productRepository.findById(a).orElseThrow(() -> new Exception("Product not found")).getName();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }).collect(Collectors.joining(", "))
+                            + " Out of Stock.",
+                    ids
+            );
+        }
+
+        for (CartItemDTO item : cartItems) {
+            int updatedRows = productRepository.decreaseQuantity(
+                    item.getProductId(),
+                    item.getQuantity()
+            );
+
+            if (updatedRows == 0) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return InventoryReservationResult.failed(
+                        "Product " + productRepository.findById(item.getProductId())
+                                .get()
+                                .getName() + " out of stock during reservation", null);
+            }
+        }
+
+        return InventoryReservationResult.success();
+    }
+
+    public Map<Long, Integer> getAvailableQuantities(List<Long> productIds) {
+        List<Map<String, Object>> quantities = productRepository.getQuantitiesByProductIds(productIds);
+        return quantities.stream()
+                .collect(Collectors.toMap(
+                        map -> ((Number) map.get("productId")).longValue(),
+                        map -> ((Number) map.get("quantity")).intValue(),
+                        (existing, replacement) -> existing
+                ));
     }
 
     @Override

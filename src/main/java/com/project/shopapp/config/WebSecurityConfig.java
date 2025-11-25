@@ -1,7 +1,7 @@
 package com.project.shopapp.config;
 
 import com.project.shopapp.Filter.JwtTokenFilter;
-import com.project.shopapp.models.Role;
+import com.project.shopapp.models.Entities.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -36,6 +36,8 @@ public class WebSecurityConfig {
                                     String.format("%s/users/logout", apiPrefix)
                             )
                             .permitAll()
+                            .requestMatchers(
+                                    String.format("%s/admin/*", apiPrefix)).hasRole(Role.ADMIN)
                             .requestMatchers(GET,
                                     String.format("%s/roles**", apiPrefix)).permitAll()
 
@@ -48,55 +50,41 @@ public class WebSecurityConfig {
 
                             .requestMatchers(GET,
                                     String.format("%s/categories**", apiPrefix)).permitAll()
-
                             .requestMatchers(POST,
                                     String.format("%s/categories/**", apiPrefix)).hasAnyRole(Role.ADMIN)
-
                             .requestMatchers(PUT,
                                     String.format("%s/categories/**", apiPrefix)).hasAnyRole(Role.ADMIN)
-
                             .requestMatchers(DELETE,
                                     String.format("%s/categories/**", apiPrefix)).hasAnyRole(Role.ADMIN)
 
                             .requestMatchers(GET,
                                     String.format("%s/products**", apiPrefix)).permitAll()
-
                             .requestMatchers(GET,
                                     String.format("%s/products/*", apiPrefix)).permitAll()
-
                             .requestMatchers(GET,
                                     String.format("%s/products/images/*", apiPrefix)).permitAll()
-
                             .requestMatchers(POST,
-                                    String.format("%s/products/**", apiPrefix)).hasAnyRole(Role.ADMIN)
-
+                                    String.format("%s/products/*", apiPrefix)).hasAnyRole(Role.ADMIN)
                             .requestMatchers(PUT,
                                     String.format("%s/products/**", apiPrefix)).hasAnyRole(Role.ADMIN)
-
                             .requestMatchers(DELETE,
                                     String.format("%s/products/**", apiPrefix)).hasAnyRole(Role.ADMIN)
 
                             .requestMatchers(POST,
                                     String.format("%s/orders/**", apiPrefix)).permitAll()
-
                             .requestMatchers(GET,
                                     String.format("%s/orders/**", apiPrefix)).permitAll()
-
                             .requestMatchers(PUT,
                                     String.format("%s/orders/**", apiPrefix)).hasRole(Role.ADMIN)
-
                             .requestMatchers(DELETE,
                                     String.format("%s/orders/**", apiPrefix)).hasRole(Role.ADMIN)
 
                             .requestMatchers(POST,
                                     String.format("%s/order_details/**", apiPrefix)).hasAnyRole(Role.USER)
-
                             .requestMatchers(GET,
                                     String.format("%s/order_details/**", apiPrefix)).hasAnyRole(Role.USER, Role.ADMIN)
-
                             .requestMatchers(PUT,
                                     String.format("%s/order_details/**", apiPrefix)).hasRole(Role.ADMIN)
-
                             .requestMatchers(DELETE,
                                     String.format("%s/order_details/**", apiPrefix)).hasRole(Role.ADMIN)
 
@@ -105,20 +93,6 @@ public class WebSecurityConfig {
                             .anyRequest().authenticated();
                 })
                 .csrf(AbstractHttpConfigurer::disable);
-//        http.cors(new Customizer<CorsConfigurer<HttpSecurity>>() {
-//            @Override
-//            public void customize(CorsConfigurer<HttpSecurity> httpSecurityCorsConfigurer) {
-//                CorsConfiguration configuration = new CorsConfiguration();
-//                configuration.setAllowCredentials(true);
-//                configuration.setAllowedOrigins(List.of("*"));
-//                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-//                configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));
-//                configuration.setExposedHeaders(List.of("x-auth-token"));
-//                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//                source.registerCorsConfiguration("/**",configuration);
-//                httpSecurityCorsConfigurer.configurationSource(source);
-//            }
-//        });
         return http.build();
     }
 }
